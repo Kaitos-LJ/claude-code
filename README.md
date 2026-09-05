@@ -47,6 +47,40 @@ bun run build
 
 构建产物输出到 `dist/cli.js`（~25.75 MB，5326 模块）。
 
+### 安装到本机（全局 `cc` 命令）
+
+一步装好依赖、构建、并把启动器安装到 `~/.local/bin/cc`：
+
+```bash
+bun run install:local
+# 等价于: bash scripts/install.sh
+```
+
+常用参数与环境变量：
+
+```bash
+bash scripts/install.sh --no-deps    # 跳过 bun install
+bash scripts/install.sh --no-build   # 跳过构建, 只重装启动器
+CC_BIN_NAME=claude bash scripts/install.sh    # 换个命令名
+CC_INSTALL_DIR=/usr/local/bin bash scripts/install.sh   # 换个安装目录
+```
+
+装完后确认（`~/.local/bin` 需要在 `PATH` 里，脚本会提示）：
+
+```bash
+cc --version   # 2.1.888 (Claude Code)
+cc             # 启动 REPL
+```
+
+启动器只是一层 `exec bun <仓库>/dist/cli.js "$@"` 的包装，指向仓库内的构建产物，
+所以之后 `git pull` + `bun run build` 就能直接更新，不需要重装。卸载删掉
+`~/.local/bin/cc` 即可。
+
+> 依赖装不动 / 一直卡住？`bun.lock` 里的 tarball 地址锁的是 `registry.npmmirror.com`，
+> 在访问不到该镜像的网络环境下 bun 会一直重试。把 lockfile 里的地址替换成官方源即可：
+> `sed -i 's#registry.npmmirror.com#registry.npmjs.org#g' bun.lock`（注意 `--registry`
+> 参数覆盖不了 lockfile 中已锁定的地址）。
+
 ## 能力清单
 
 > ✅ = 已实现  ⚠️ = 部分实现 / 条件启用  ❌ = stub / 移除 / feature flag 关闭
