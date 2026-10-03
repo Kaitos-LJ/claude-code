@@ -47,6 +47,79 @@ bun run build
 
 构建产物输出到 `dist/cli.js`（~25.75 MB，5326 模块）。
 
+### 安装到本机（全局 `cc` 命令）
+
+前置条件（三样都要有）：
+
+1. **Bun** — Windows 在 PowerShell 里粘一行 `irm bun.sh/install.ps1 | iex`；
+   macOS / Linux 用 `curl -fsSL https://bun.sh/install | bash`。装完要**重开一个终端窗口**。
+2. **Git** — Windows 从 https://git-scm.com/download/win 下载安装
+3. **把仓库 clone 到本地**，安装脚本必须在仓库目录里跑
+
+```bash
+git clone https://github.com/Kaitos-LJ/claude-code.git
+cd claude-code
+```
+
+#### Windows
+
+双击 `scripts\install.cmd` 就行，全程不用敲命令。它会依次装依赖、构建、
+把启动器写到 `%LOCALAPPDATA%\Programs\cc\bin\cc.cmd`，并把该目录加进用户 `PATH`。
+
+也可以在终端里带参数运行：
+
+```bat
+scripts\install.cmd            :: 完整安装
+scripts\install.cmd --no-deps  :: 跳过 bun install
+scripts\install.cmd --no-build :: 跳过构建, 只重装启动器
+scripts\install.cmd --no-path  :: 不改 PATH
+```
+
+装完**必须重开一个终端窗口**（PATH 改动对已打开的窗口不生效），然后：
+
+```bat
+cc --version
+cc
+```
+
+> `install.cmd` 只是一层双击外壳，真正的逻辑在 `scripts\install.ps1`，
+> 由 `powershell -ExecutionPolicy Bypass -File` 调起——你不需要自己开 PowerShell，
+> 也不需要改执行策略。卸载删掉 `%LOCALAPPDATA%\Programs\cc\bin\cc.cmd` 即可。
+
+#### macOS / Linux
+
+一步装好依赖、构建、并把启动器安装到 `~/.local/bin/cc`：
+
+```bash
+bun run install:local
+# 等价于: bash scripts/install.sh
+```
+
+常用参数与环境变量：
+
+```bash
+bash scripts/install.sh --no-deps    # 跳过 bun install
+bash scripts/install.sh --no-build   # 跳过构建, 只重装启动器
+CC_BIN_NAME=claude bash scripts/install.sh    # 换个命令名
+CC_INSTALL_DIR=/usr/local/bin bash scripts/install.sh   # 换个安装目录
+```
+
+装完后确认（`~/.local/bin` 需要在 `PATH` 里，脚本会提示）：
+
+```bash
+cc --version   # 2.1.888 (Claude Code)
+cc             # 启动 REPL
+```
+
+启动器只是一层 `exec bun <仓库>/dist/cli.js "$@"` 的包装，指向仓库内的构建产物，
+所以之后 `git pull` + `bun run build` 就能直接更新，不需要重装。卸载删掉
+`~/.local/bin/cc` 即可。Windows 版启动器同理，只是内容是 `bun "<仓库>\dist\cli.js" %*`。
+
+> 依赖装不动 / 一直卡住？`bun.lock` 里的 tarball 地址锁的是 `registry.npmmirror.com`，
+> 在访问不到该镜像的网络环境下 bun 会一直重试。把 lockfile 里的地址替换成官方源即可：
+> `sed -i 's#registry.npmmirror.com#registry.npmjs.org#g' bun.lock`（注意 `--registry`
+> 参数覆盖不了 lockfile 中已锁定的地址）。
+
 ## 能力清单
 
 > ✅ = 已实现  ⚠️ = 部分实现 / 条件启用  ❌ = stub / 移除 / feature flag 关闭
